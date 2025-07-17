@@ -25,12 +25,14 @@ export default function TimerScreen({ navigation }: TimerScreenProps) {
     timerEndTime,
     isTimerActive,
     hasBeenAlerted,
+    smsStatus,
     emergencyContacts,
     setTimerDuration,
     startTimer,
     checkIn,
     stopTimer,
     triggerAlert,
+    setSmsStatus,
   } = usePetAlertStore();
 
   const [timeRemaining, setTimeRemaining] = useState(0);
@@ -46,22 +48,67 @@ export default function TimerScreen({ navigation }: TimerScreenProps) {
       await triggerAlarm();
       
       // Send SMS alerts to emergency contacts
-      await sendEmergencyAlerts(emergencyContacts);
+      const smsResult = await sendEmergencyAlerts(emergencyContacts);
       
-      Alert.alert(
-        "🚨 PET ALERT TRIGGERED! 🚨",
-        `URGENT: Your pet safety timer has expired!\n\nEmergency contacts have been notified via SMS:\n${emergencyContacts.map(c => `• ${c.name} (${c.phone})`).join('\n')}\n\nPlease check in immediately!`,
-        [
-          { text: "Check In Now", onPress: handleCheckIn },
-          { text: "Snooze 5 min", onPress: () => handleSnooze(5) },
-        ]
-      );
+      // Store SMS status
+      setSmsStatus({
+        sent: smsResult.success,
+        sentTo: smsResult.sentTo,
+        failedTo: smsResult.failedTo,
+        message: smsResult.message,
+      });
+      
+      if (smsResult.success) {
+        Alert.alert(
+          "🚨 PET ALERT TRIGGERED! 🚨",
+          `URGENT: Your pet safety timer has expired!\n\n✅ SMS alerts automatically sent to:\n${smsResult.sentTo.map(phone => {
+            const contact = emergencyContacts.find(c => c.phone === phone);
+            return `• ${contact?.name || 'Unknown'} (${phone})`;
+          }).join('\n')}\n\nYour emergency contacts have been notified and will check on your pets!\n\nPlease check in immediately!`,
+          [
+            { text: "Check In Now", onPress: handleCheckIn },
+            { text: "Snooze 5 min", onPress: () => handleSnooze(5) },
+          ]
+        );
+      } else {
+        // Show partial success or failure
+        const failedContacts = smsResult.failedTo.map(phone => {
+          const contact = emergencyContacts.find(c => c.phone === phone);
+          return `• ${contact?.name || 'Unknown'} (${phone})`;
+        }).join('\n');
+        
+        Alert.alert(
+          "🚨 PET ALERT TRIGGERED! 🚨",
+          `URGENT: Your pet safety timer has expired!\n\n${smsResult.sentTo.length > 0 ? 
+            `✅ SMS sent to ${smsResult.sentTo.length} contacts\n` : 
+            ''
+          }${smsResult.failedTo.length > 0 ? 
+            `❌ Failed to send SMS to:\n${failedContacts}\n` : 
+            ''
+          }\nReason: ${smsResult.message}\n\nPlease contact your emergency contacts manually if needed!`,
+          [
+            { text: "Check In Now", onPress: handleCheckIn },
+            { text: "Call Contacts", onPress: () => handleCallContacts() },
+          ]
+        );
+      }
     } catch (error) {
       console.error('Error sending emergency alerts:', error);
       Alert.alert(
         "🚨 PET ALERT TRIGGERED! 🚨",
         "Timer expired but there was an issue sending SMS alerts. Please contact your emergency contacts manually.",
         [{ text: "Check In Now", onPress: handleCheckIn }]
+      );
+    }
+  };
+
+  const handleCallContacts = () => {
+    // This would open the phone dialer for the first contact
+    if (emergencyContacts.length > 0) {
+      Alert.alert(
+        "Emergency Contacts",
+        `Call your emergency contacts:\n${emergencyContacts.map(c => `• ${c.name}: ${c.phone}`).join('\n')}`,
+        [{ text: "OK" }]
       );
     }
   };
@@ -198,17 +245,50 @@ export default function TimerScreen({ navigation }: TimerScreenProps) {
             {hasBeenAlerted && (
               <View className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
                 <Text className="text-red-800 text-center font-bold text-lg">
-                  🚨 EMERGENCY ALERT SENT! 🚨
+                  🚨 EMERGENCY ALERT TRIGGERED! 🚨
                 </Text>
-                <Text className="text-red-700 text-center font-medium mt-2">
-                  SMS messages sent to:
-                </Text>
-                <Text className="text-red-600 text-center text-sm mt-1">
-                  {emergencyContacts.map(c => `${c.name} (${c.phone})`).join(', ')}
-                </Text>
-                <Text className="text-red-500 text-center text-xs mt-2">
-                  Your emergency contacts have been notified via SMS and will check on your pets
-                </Text>
+                
+                {smsStatus && (
+                  <>
+                    {smsStatus.sent && smsStatus.sentTo.length > 0 && (
+                      <>
+                        <Text className="text-green-700 text-center font-medium mt-2">
+                          ✅ SMS automatically sent to:
+                        </Text>
+                        <Text className="text-green-600 text-center text-sm mt-1">
+                          {smsStatus.sentTo.map(phone => {
+                            const contact = emergencyContacts.find(c => c.phone === phone);
+                            return `${contact?.name || 'Unknown'} (${phone})`;
+                          }).join(', ')}
+                        </Text>
+                      </>
+                    )}
+                    
+                    {smsStatus.failedTo.length > 0 && (
+                      <>
+                        <Text className="text-red-700 text-center font-medium mt-2">
+                          ❌ Failed to send SMS to:
+                        </Text>
+                        <Text className="text-red-600 text-center text-sm mt-1">
+                          {smsStatus.failedTo.map(phone => {
+                            const contact = emergencyContacts.find(c => c.phone === phone);
+                            return `${contact?.name || 'Unknown'} (${phone})`;
+                          }).join(', ')}
+                        </Text>
+                      </>
+                    )}
+                    
+                    <Text className="text-red-500 text-center text-xs mt-2">
+                      {smsStatus.message}
+                    </Text>
+                  </>
+                )}
+                
+                {!smsStatus && (
+                  <Text className="text-red-500 text-center text-xs mt-2">
+                    SMS status unknown - please contact emergency contacts manually
+                  </Text>
+                )}
               </View>
             )}
 

@@ -119,13 +119,43 @@ export async function triggerAlarm(): Promise<void> {
   }
 }
 
-// Function to send SMS to emergency contacts
-export async function sendEmergencyAlerts(contacts: EmergencyContact[], userMessage?: string): Promise<void> {
+// Function to send SMS to emergency contacts using automatic SMS gateway
+export async function sendEmergencyAlerts(contacts: EmergencyContact[], userMessage?: string): Promise<{ success: boolean; message: string; sentTo: string[]; failedTo: string[] }> {
+  // Import the SMS gateway function
+  const { sendAutomaticSMS } = await import('./smsGateway');
+  
+  try {
+    const defaultMessage = userMessage || formatAlertMessage('{contactName}');
+    
+    // Send SMS automatically using gateway
+    const result = await sendAutomaticSMS(contacts, defaultMessage);
+    
+    if (result.success) {
+      console.log('Emergency SMS sent successfully to:', result.sentTo);
+    } else {
+      console.log('SMS sending failed:', result.message);
+    }
+    
+    return result;
+    
+  } catch (error) {
+    console.error('Error sending emergency SMS:', error);
+    return {
+      success: false,
+      message: `SMS sending error: ${error.message}`,
+      sentTo: [],
+      failedTo: contacts.map(c => c.phone)
+    };
+  }
+}
+
+// Fallback function for native SMS composer (requires user interaction)
+export async function sendEmergencyAlertsNative(contacts: EmergencyContact[], userMessage?: string): Promise<void> {
   try {
     // Check if SMS is available
     const isAvailable = await SMS.isAvailableAsync();
     if (!isAvailable) {
-      console.log('SMS not available, using mock alert');
+      console.log('SMS not available');
       return;
     }
 
@@ -139,7 +169,7 @@ export async function sendEmergencyAlerts(contacts: EmergencyContact[], userMess
 
     const defaultMessage = userMessage || formatAlertMessage('Friend');
     
-    // Send SMS to all contacts
+    // Send SMS to all contacts (opens native SMS app)
     const result = await SMS.sendSMSAsync(phoneNumbers, defaultMessage);
     
     if (result.result === 'sent') {
@@ -150,8 +180,6 @@ export async function sendEmergencyAlerts(contacts: EmergencyContact[], userMess
     
   } catch (error) {
     console.error('Error sending emergency SMS:', error);
-    // Fallback to mock alert
-    console.log('Fallback: Mock emergency alerts sent to:', contacts.map(c => c.name));
   }
 }
 

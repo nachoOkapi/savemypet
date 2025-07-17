@@ -18,6 +18,14 @@ export interface PetAlertState {
   hasBeenAlerted: boolean;
   notificationId: string | null;
   
+  // SMS status
+  smsStatus: {
+    sent: boolean;
+    sentTo: string[];
+    failedTo: string[];
+    message: string;
+  } | null;
+  
   // Emergency contacts
   emergencyContacts: EmergencyContact[];
   
@@ -30,6 +38,7 @@ export interface PetAlertState {
   removeEmergencyContact: (id: string) => void;
   updateEmergencyContact: (id: string, updates: Partial<EmergencyContact>) => void;
   triggerAlert: () => void;
+  setSmsStatus: (status: { sent: boolean; sentTo: string[]; failedTo: string[]; message: string }) => void;
 }
 
 export const usePetAlertStore = create<PetAlertState>()(
@@ -42,6 +51,7 @@ export const usePetAlertStore = create<PetAlertState>()(
       isTimerActive: false,
       hasBeenAlerted: false,
       notificationId: null,
+      smsStatus: null,
       emergencyContacts: [],
       
       // Actions
@@ -67,6 +77,7 @@ export const usePetAlertStore = create<PetAlertState>()(
           isTimerActive: false,
           hasBeenAlerted: false,
           notificationId: null,
+          smsStatus: null,
         });
       },
       
@@ -77,6 +88,7 @@ export const usePetAlertStore = create<PetAlertState>()(
           isTimerActive: false,
           hasBeenAlerted: false,
           notificationId: null,
+          smsStatus: null,
         });
       },
       
@@ -106,6 +118,10 @@ export const usePetAlertStore = create<PetAlertState>()(
       
       triggerAlert: () => {
         set({ hasBeenAlerted: true });
+      },
+      
+      setSmsStatus: (status) => {
+        set({ smsStatus: status });
       },
     }),
     {
