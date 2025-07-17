@@ -98,8 +98,9 @@ export default function ContactsScreen({ navigation }: ContactsScreenProps) {
             How Pet Alert Works
           </Text>
           <Text className="text-blue-700 text-sm">
-            When your timer expires, these contacts will be notified to check on your pets. 
-            Make sure to add trusted friends or family members.
+            When your timer expires, these contacts will receive SMS text messages with emergency 
+            instructions to check on your pets. The app will also trigger an alarm on your phone 
+            with sound and vibration. Make sure to add trusted friends or family members with valid phone numbers.
           </Text>
         </View>
 

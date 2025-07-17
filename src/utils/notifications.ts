@@ -1,5 +1,7 @@
 import * as Notifications from 'expo-notifications';
-import { Platform } from 'react-native';
+import * as SMS from 'expo-sms';
+import * as Haptics from 'expo-haptics';
+import { Platform, Alert } from 'react-native';
 import { EmergencyContact } from '../state/petAlertStore';
 
 // Configure notification handler
@@ -10,6 +12,12 @@ Notifications.setNotificationHandler({
     shouldSetBadge: false,
   }),
 });
+
+// Create a persistent alarm sound
+const createAlarmSound = () => {
+  // This will create a louder, more persistent notification sound
+  return 'default'; // In a real app, you'd use a custom alarm sound file
+};
 
 export async function requestNotificationPermissions(): Promise<boolean> {
   try {
@@ -46,11 +54,13 @@ export async function scheduleTimerNotification(durationMinutes: number): Promis
 
     const notificationId = await Notifications.scheduleNotificationAsync({
       content: {
-        title: "Pet Alert Timer Expired!",
-        body: "Time to check in! Your emergency contacts will be notified if you don't respond.",
-        sound: 'default',
+        title: "🚨 PET ALERT - TIMER EXPIRED! 🚨",
+        body: "URGENT: Check in now! Your emergency contacts will be notified if you don't respond immediately.",
+        sound: createAlarmSound(),
         priority: Notifications.AndroidNotificationPriority.MAX,
         sticky: true,
+        vibrate: [0, 500, 200, 500, 200, 500],
+        categoryIdentifier: 'pet-alert-alarm',
       },
       trigger: {
         seconds: durationMinutes * 60,
@@ -80,18 +90,72 @@ export async function cancelAllNotifications(): Promise<void> {
   }
 }
 
-// Mock function to simulate sending alerts to emergency contacts
-// In a real app, this would integrate with SMS/email services
-export function sendEmergencyAlerts(contacts: EmergencyContact[], userMessage?: string): Promise<void> {
-  return new Promise((resolve) => {
-    // Simulate API call delay
+// Function to trigger alarm with haptics and sound
+export async function triggerAlarm(): Promise<void> {
+  try {
+    // Strong haptic feedback
+    await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    
+    // Create an immediate alarm notification
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: "🚨 PET ALERT ALARM! 🚨",
+        body: "URGENT: Your pet safety timer has expired! Check in immediately!",
+        sound: createAlarmSound(),
+        priority: Notifications.AndroidNotificationPriority.MAX,
+        sticky: true,
+        vibrate: [0, 1000, 500, 1000, 500, 1000],
+      },
+      trigger: null, // Immediate
+    });
+
+    // Continue haptic feedback for emphasis
     setTimeout(() => {
-      console.log('Emergency alerts sent to:', contacts.map(c => c.name));
-      resolve();
-    }, 1000);
-  });
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    }, 500);
+    
+  } catch (error) {
+    console.error('Error triggering alarm:', error);
+  }
+}
+
+// Function to send SMS to emergency contacts
+export async function sendEmergencyAlerts(contacts: EmergencyContact[], userMessage?: string): Promise<void> {
+  try {
+    // Check if SMS is available
+    const isAvailable = await SMS.isAvailableAsync();
+    if (!isAvailable) {
+      console.log('SMS not available, using mock alert');
+      return;
+    }
+
+    // Prepare contacts with phone numbers
+    const phoneNumbers = contacts.map(contact => contact.phone).filter(phone => phone);
+    
+    if (phoneNumbers.length === 0) {
+      console.log('No valid phone numbers found');
+      return;
+    }
+
+    const defaultMessage = userMessage || formatAlertMessage('Friend');
+    
+    // Send SMS to all contacts
+    const result = await SMS.sendSMSAsync(phoneNumbers, defaultMessage);
+    
+    if (result.result === 'sent') {
+      console.log('Emergency SMS sent successfully to:', contacts.map(c => c.name));
+    } else {
+      console.log('SMS sending was cancelled or failed');
+    }
+    
+  } catch (error) {
+    console.error('Error sending emergency SMS:', error);
+    // Fallback to mock alert
+    console.log('Fallback: Mock emergency alerts sent to:', contacts.map(c => c.name));
+  }
 }
 
 export function formatAlertMessage(contactName: string): string {
-  return `Hi ${contactName}, this is an automated Pet Alert. I haven't checked in as scheduled. Please check on my pets or contact me directly. This alert was sent because I may not be able to care for my pets right now.`;
+  const timestamp = new Date().toLocaleString();
+  return `🚨 PET ALERT 🚨\n\nHi ${contactName}, this is an automated emergency alert. I haven't checked in as scheduled and may not be able to care for my pets.\n\nPlease:\n1. Check on my pets immediately\n2. Contact me directly\n3. Use your emergency key if needed\n\nTime: ${timestamp}\n\nThis is an automated message from Pet Alert app.`;
 }

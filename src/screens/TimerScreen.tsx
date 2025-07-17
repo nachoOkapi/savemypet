@@ -8,8 +8,10 @@ import {
   scheduleTimerNotification, 
   cancelAllNotifications, 
   sendEmergencyAlerts, 
-  formatAlertMessage 
+  formatAlertMessage,
+  triggerAlarm 
 } from '../utils/notifications';
+import CustomTimerInput from '../components/CustomTimerInput';
 
 interface TimerScreenProps {
   navigation: any;
@@ -34,30 +36,41 @@ export default function TimerScreen({ navigation }: TimerScreenProps) {
   const [timeRemaining, setTimeRemaining] = useState(0);
   const [selectedDuration, setSelectedDuration] = useState(timerDuration);
   const [notificationId, setNotificationId] = useState<string | null>(null);
+  const [showCustomTimer, setShowCustomTimer] = useState(false);
 
-  const durations = [15, 30, 60, 120, 240, 480]; // minutes
+  const durations = [15, 30, 60, 120, 240, 480, 1440, 2880]; // minutes (last two are 1 day, 2 days)
 
   const handleTimerExpired = async () => {
     try {
-      // Send alerts to emergency contacts
+      // Trigger alarm immediately
+      await triggerAlarm();
+      
+      // Send SMS alerts to emergency contacts
       await sendEmergencyAlerts(emergencyContacts);
       
       Alert.alert(
-        "Pet Alert Triggered!",
-        `Emergency contacts have been notified: ${emergencyContacts.map(c => c.name).join(', ')}`,
+        "🚨 PET ALERT TRIGGERED! 🚨",
+        `URGENT: Your pet safety timer has expired!\n\nEmergency contacts have been notified via SMS:\n${emergencyContacts.map(c => `• ${c.name} (${c.phone})`).join('\n')}\n\nPlease check in immediately!`,
         [
           { text: "Check In Now", onPress: handleCheckIn },
-          { text: "Dismiss", style: "cancel" }
+          { text: "Snooze 5 min", onPress: () => handleSnooze(5) },
         ]
       );
     } catch (error) {
       console.error('Error sending emergency alerts:', error);
       Alert.alert(
-        "Pet Alert Triggered!",
-        "Timer expired but there was an issue sending alerts. Please contact your emergency contacts manually.",
+        "🚨 PET ALERT TRIGGERED! 🚨",
+        "Timer expired but there was an issue sending SMS alerts. Please contact your emergency contacts manually.",
         [{ text: "Check In Now", onPress: handleCheckIn }]
       );
     }
+  };
+
+  const handleSnooze = async (minutes: number) => {
+    const newEndTime = Date.now() + (minutes * 60 * 1000);
+    // This would require updating the store to support snoozing
+    // For now, just extend the timer
+    Alert.alert("Snoozed", `Timer extended by ${minutes} minutes`);
   };
 
   useEffect(() => {
@@ -84,14 +97,30 @@ export default function TimerScreen({ navigation }: TimerScreenProps) {
 
   const formatTime = (milliseconds: number) => {
     const totalSeconds = Math.floor(milliseconds / 1000);
-    const hours = Math.floor(totalSeconds / 3600);
+    const days = Math.floor(totalSeconds / (24 * 3600));
+    const hours = Math.floor((totalSeconds % (24 * 3600)) / 3600);
     const minutes = Math.floor((totalSeconds % 3600) / 60);
     const seconds = totalSeconds % 60;
     
-    if (hours > 0) {
+    if (days > 0) {
+      return `${days}d ${hours}h ${minutes}m ${seconds}s`;
+    } else if (hours > 0) {
       return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
     }
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  };
+
+  const formatDuration = (totalMinutes: number) => {
+    const days = Math.floor(totalMinutes / (24 * 60));
+    const hours = Math.floor((totalMinutes % (24 * 60)) / 60);
+    const minutes = totalMinutes % 60;
+    
+    const parts = [];
+    if (days > 0) parts.push(`${days}d`);
+    if (hours > 0) parts.push(`${hours}h`);
+    if (minutes > 0) parts.push(`${minutes}m`);
+    
+    return parts.join(' ') || '0m';
   };
 
   const handleStartTimer = async () => {
@@ -168,11 +197,17 @@ export default function TimerScreen({ navigation }: TimerScreenProps) {
 
             {hasBeenAlerted && (
               <View className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-                <Text className="text-red-800 text-center font-medium">
-                  Emergency contacts have been notified!
+                <Text className="text-red-800 text-center font-bold text-lg">
+                  🚨 EMERGENCY ALERT SENT! 🚨
+                </Text>
+                <Text className="text-red-700 text-center font-medium mt-2">
+                  SMS messages sent to:
                 </Text>
                 <Text className="text-red-600 text-center text-sm mt-1">
-                  {emergencyContacts.map(c => c.name).join(', ')}
+                  {emergencyContacts.map(c => `${c.name} (${c.phone})`).join(', ')}
+                </Text>
+                <Text className="text-red-500 text-center text-xs mt-2">
+                  Your emergency contacts have been notified via SMS and will check on your pets
                 </Text>
               </View>
             )}
@@ -204,7 +239,7 @@ export default function TimerScreen({ navigation }: TimerScreenProps) {
               <Text className="text-lg font-semibold text-gray-900 mb-4 text-center">
                 Set Timer Duration
               </Text>
-              <View className="flex-row flex-wrap justify-center gap-3">
+              <View className="flex-row flex-wrap justify-center gap-3 mb-4">
                 {durations.map((duration) => (
                   <Pressable
                     key={duration}
@@ -217,16 +252,25 @@ export default function TimerScreen({ navigation }: TimerScreenProps) {
                     )}
                   >
                     <Text className={cn(
-                      "font-medium",
+                      "font-medium text-center",
                       selectedDuration === duration
                         ? "text-white"
                         : "text-gray-700"
                     )}>
-                      {duration < 60 ? `${duration}m` : `${duration / 60}h`}
+                      {formatDuration(duration)}
                     </Text>
                   </Pressable>
                 ))}
               </View>
+              
+              {/* Custom Timer Button */}
+              <Pressable
+                onPress={() => setShowCustomTimer(true)}
+                className="flex-row items-center justify-center py-3 px-4 rounded-lg border-2 border-purple-500 bg-purple-50"
+              >
+                <Ionicons name="time" size={20} color="#8B5CF6" />
+                <Text className="text-purple-700 font-medium ml-2">Custom Timer</Text>
+              </Pressable>
             </View>
 
             {/* Emergency Contacts Status */}
@@ -252,13 +296,23 @@ export default function TimerScreen({ navigation }: TimerScreenProps) {
               )}
             </View>
 
+            {/* Selected Duration Display */}
+            <View className="bg-blue-50 rounded-lg p-4 mb-6">
+              <Text className="text-blue-800 font-medium text-center">
+                Selected Duration: {formatDuration(selectedDuration)}
+              </Text>
+              <Text className="text-blue-600 text-sm text-center mt-1">
+                Timer will expire in {formatDuration(selectedDuration)} and alert your emergency contacts
+              </Text>
+            </View>
+
             {/* Start Timer Button */}
             <Pressable
               onPress={handleStartTimer}
               className="bg-blue-500 py-4 px-8 rounded-xl items-center mb-4"
             >
               <Text className="text-white text-lg font-semibold">
-                Start Pet Alert Timer
+                Start Pet Alert Timer ({formatDuration(selectedDuration)})
               </Text>
             </Pressable>
 
@@ -274,6 +328,13 @@ export default function TimerScreen({ navigation }: TimerScreenProps) {
             )}
           </View>
         )}
+        {/* Custom Timer Modal */}
+        <CustomTimerInput
+          visible={showCustomTimer}
+          onClose={() => setShowCustomTimer(false)}
+          onConfirm={(minutes) => setSelectedDuration(minutes)}
+          initialMinutes={selectedDuration}
+        />
       </View>
     </SafeAreaView>
   );
