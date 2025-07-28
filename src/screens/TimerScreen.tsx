@@ -12,6 +12,8 @@ import {
   triggerAlarm 
 } from '../utils/notifications';
 import CustomTimerInput from '../components/CustomTimerInput';
+import PetProfileDisplay from '../components/PetProfileDisplay';
+import PetProfileSetup from '../components/PetProfileSetup';
 
 interface TimerScreenProps {
   navigation: any;
@@ -20,6 +22,7 @@ interface TimerScreenProps {
 export default function TimerScreen({ navigation }: TimerScreenProps) {
   const insets = useSafeAreaInsets();
   const {
+    petProfile,
     timerDuration,
     timerStartTime,
     timerEndTime,
@@ -39,8 +42,19 @@ export default function TimerScreen({ navigation }: TimerScreenProps) {
   const [selectedDuration, setSelectedDuration] = useState(timerDuration);
   const [notificationId, setNotificationId] = useState<string | null>(null);
   const [showCustomTimer, setShowCustomTimer] = useState(false);
+  const [showPetProfile, setShowPetProfile] = useState(false);
 
   const durations = [15, 30, 60, 120, 240, 480, 1440, 2880]; // minutes (last two are 1 day, 2 days)
+
+  // Show pet profile setup for first-time users
+  useEffect(() => {
+    if (petProfile.name === 'My Pet') {
+      // Small delay to let the screen render first
+      setTimeout(() => {
+        setShowPetProfile(true);
+      }, 500);
+    }
+  }, [petProfile.name]);
 
   const handleTimerExpired = async () => {
     try {
@@ -173,11 +187,11 @@ export default function TimerScreen({ navigation }: TimerScreenProps) {
   const handleStartTimer = async () => {
     if (emergencyContacts.length === 0) {
       Alert.alert(
-        "No Emergency Contacts",
-        "Please add at least one emergency contact before setting a timer.",
+        "Who Should We Call?",
+        `We need at least one trusted friend who can check on ${petProfile.name} if needed.`,
         [
-          { text: "Cancel", style: "cancel" },
-          { text: "Add Contact", onPress: () => navigation.navigate('Contacts') }
+          { text: "Not Now", style: "cancel" },
+          { text: "Add Someone", onPress: () => navigation.navigate('Contacts') }
         ]
       );
       return;
@@ -197,7 +211,7 @@ export default function TimerScreen({ navigation }: TimerScreenProps) {
     setNotificationId(null);
     
     checkIn();
-    Alert.alert("Checked In!", "Timer has been reset. Your pets are safe!");
+    Alert.alert("Welcome Home! 🏠", `Great to have you back! ${petProfile.name} is safe and sound.`);
   };
 
   const handleStopTimer = async () => {
@@ -213,7 +227,7 @@ export default function TimerScreen({ navigation }: TimerScreenProps) {
       <View className="flex-1 px-6">
         {/* Header */}
         <View className="flex-row items-center justify-between py-4">
-          <Text className="text-2xl font-bold text-gray-900">Pet Alert</Text>
+          <Text className="text-2xl font-bold text-gray-900">Pet Safety</Text>
           <Pressable
             onPress={() => navigation.navigate('Contacts')}
             className="p-2"
@@ -221,6 +235,11 @@ export default function TimerScreen({ navigation }: TimerScreenProps) {
             <Ionicons name="people" size={24} color="#374151" />
           </Pressable>
         </View>
+
+        {/* Pet Profile Display */}
+        <PetProfileDisplay 
+          onEdit={() => setShowPetProfile(true)}
+        />
 
         {/* Status Display */}
         {isTimerActive ? (
@@ -238,7 +257,7 @@ export default function TimerScreen({ navigation }: TimerScreenProps) {
                 {formatTime(timeRemaining)}
               </Text>
               <Text className="text-gray-600 text-lg mt-2">
-                {hasBeenAlerted ? "Alert Triggered!" : "Time Remaining"}
+                {hasBeenAlerted ? "Help is on the way!" : `Until ${petProfile.name}'s safety check`}
               </Text>
             </View>
 
@@ -298,7 +317,7 @@ export default function TimerScreen({ navigation }: TimerScreenProps) {
                 className="bg-green-500 py-4 px-8 rounded-xl items-center"
               >
                 <Text className="text-white text-lg font-semibold">
-                  Check In - I'm Safe!
+                  I'm Back! {petProfile.name} is Safe
                 </Text>
               </Pressable>
 
@@ -307,7 +326,7 @@ export default function TimerScreen({ navigation }: TimerScreenProps) {
                 className="bg-gray-500 py-3 px-8 rounded-xl items-center"
               >
                 <Text className="text-white text-base font-medium">
-                  Cancel Timer
+                  Cancel Safety Timer
                 </Text>
               </Pressable>
             </View>
@@ -317,7 +336,7 @@ export default function TimerScreen({ navigation }: TimerScreenProps) {
             {/* Duration Selection */}
             <View className="mb-8">
               <Text className="text-lg font-semibold text-gray-900 mb-4 text-center">
-                Set Timer Duration
+                How long will you be away?
               </Text>
               <View className="flex-row flex-wrap justify-center gap-3 mb-4">
                 {durations.map((duration) => (
@@ -356,22 +375,22 @@ export default function TimerScreen({ navigation }: TimerScreenProps) {
             {/* Emergency Contacts Status */}
             <View className="bg-gray-50 rounded-lg p-4 mb-8">
               <Text className="text-gray-800 font-medium mb-2">
-                Emergency Contacts ({emergencyContacts.length})
+                Trusted Helpers ({emergencyContacts.length})
               </Text>
               {emergencyContacts.length > 0 ? (
                 emergencyContacts.slice(0, 2).map((contact) => (
                   <Text key={contact.id} className="text-gray-600 text-sm">
-                    • {contact.name}
+                    • {contact.name} will get an SMS
                   </Text>
                 ))
               ) : (
                 <Text className="text-red-600 text-sm">
-                  No emergency contacts added
+                  No trusted helpers added yet
                 </Text>
               )}
               {emergencyContacts.length > 2 && (
                 <Text className="text-gray-500 text-sm">
-                  +{emergencyContacts.length - 2} more
+                  +{emergencyContacts.length - 2} more helpers
                 </Text>
               )}
             </View>
@@ -379,10 +398,10 @@ export default function TimerScreen({ navigation }: TimerScreenProps) {
             {/* Selected Duration Display */}
             <View className="bg-blue-50 rounded-lg p-4 mb-6">
               <Text className="text-blue-800 font-medium text-center">
-                Selected Duration: {formatDuration(selectedDuration)}
+                You'll be away for: {formatDuration(selectedDuration)}
               </Text>
               <Text className="text-blue-600 text-sm text-center mt-1">
-                Timer will expire in {formatDuration(selectedDuration)} and alert your emergency contacts
+                We'll check on {petProfile.name} if you don't return in time
               </Text>
             </View>
 
@@ -392,7 +411,7 @@ export default function TimerScreen({ navigation }: TimerScreenProps) {
               className="bg-blue-500 py-4 px-8 rounded-xl items-center mb-4"
             >
               <Text className="text-white text-lg font-semibold">
-                Start Pet Alert Timer ({formatDuration(selectedDuration)})
+                Start Safety Timer for {petProfile.name}
               </Text>
             </Pressable>
 
@@ -402,7 +421,7 @@ export default function TimerScreen({ navigation }: TimerScreenProps) {
                 className="py-3 px-8 rounded-xl items-center border border-blue-500"
               >
                 <Text className="text-blue-500 text-base font-medium">
-                  Add Emergency Contacts
+                  Add Trusted Friends to Help
                 </Text>
               </Pressable>
             )}
@@ -414,6 +433,12 @@ export default function TimerScreen({ navigation }: TimerScreenProps) {
           onClose={() => setShowCustomTimer(false)}
           onConfirm={(minutes) => setSelectedDuration(minutes)}
           initialMinutes={selectedDuration}
+        />
+
+        {/* Pet Profile Modal */}
+        <PetProfileSetup
+          visible={showPetProfile}
+          onClose={() => setShowPetProfile(false)}
         />
       </View>
     </SafeAreaView>

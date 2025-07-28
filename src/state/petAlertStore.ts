@@ -9,7 +9,15 @@ export interface EmergencyContact {
   email?: string;
 }
 
+export interface PetProfile {
+  name: string;
+  photo?: string; // base64 or file URI
+}
+
 export interface PetAlertState {
+  // Pet profile
+  petProfile: PetProfile;
+  
   // Timer state
   timerDuration: number; // in minutes
   timerStartTime: number | null;
@@ -30,6 +38,7 @@ export interface PetAlertState {
   emergencyContacts: EmergencyContact[];
   
   // Actions
+  setPetProfile: (profile: Partial<PetProfile>) => void;
   setTimerDuration: (duration: number) => void;
   startTimer: () => void;
   checkIn: () => void;
@@ -45,6 +54,10 @@ export const usePetAlertStore = create<PetAlertState>()(
   persist(
     (set, get) => ({
       // Initial state
+      petProfile: {
+        name: 'My Pet',
+        photo: undefined,
+      },
       timerDuration: 60, // default 1 hour
       timerStartTime: null,
       timerEndTime: null,
@@ -55,6 +68,12 @@ export const usePetAlertStore = create<PetAlertState>()(
       emergencyContacts: [],
       
       // Actions
+      setPetProfile: (profile: Partial<PetProfile>) => {
+        set((state) => ({
+          petProfile: { ...state.petProfile, ...profile }
+        }));
+      },
+      
       setTimerDuration: (duration: number) => {
         set({ timerDuration: duration });
       },
@@ -128,6 +147,7 @@ export const usePetAlertStore = create<PetAlertState>()(
       name: 'pet-alert-storage',
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({
+        petProfile: state.petProfile,
         timerDuration: state.timerDuration,
         emergencyContacts: state.emergencyContacts,
       }),

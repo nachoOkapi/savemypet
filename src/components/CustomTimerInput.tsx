@@ -46,7 +46,7 @@ export default function CustomTimerInput({
       <View className="flex-1 justify-end bg-black/50">
         <View className="bg-white rounded-t-3xl p-6">
           <View className="flex-row items-center justify-between mb-6">
-            <Text className="text-xl font-bold text-gray-900">Custom Timer</Text>
+            <Text className="text-xl font-bold text-gray-900">How long will you be away?</Text>
             <Pressable onPress={onClose} className="p-2">
               <Ionicons name="close" size={24} color="#6B7280" />
             </Pressable>
@@ -134,10 +134,10 @@ export default function CustomTimerInput({
             {/* Preview */}
             <View className="bg-blue-50 rounded-lg p-4">
               <Text className="text-blue-800 font-medium text-center">
-                Timer Duration: {formatTimeDisplay()}
+                You'll be away for: {formatTimeDisplay()}
               </Text>
               <Text className="text-blue-600 text-sm text-center mt-1">
-                Total: {((days * 24 * 60) + (hours * 60) + minutes).toLocaleString()} minutes
+                We'll keep your pet safe while you're gone
               </Text>
             </View>
 
@@ -165,7 +165,7 @@ export default function CustomTimerInput({
                     ? "text-white"
                     : "text-gray-500"
                 )}>
-                  Set Timer
+                  Start Safety Watch
                 </Text>
               </Pressable>
             </View>

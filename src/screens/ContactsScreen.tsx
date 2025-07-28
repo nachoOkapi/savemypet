@@ -82,7 +82,7 @@ export default function ContactsScreen({ navigation }: ContactsScreenProps) {
         <Pressable onPress={() => navigation.goBack()} className="p-1">
           <Ionicons name="arrow-back" size={24} color="#374151" />
         </Pressable>
-        <Text className="text-xl font-bold text-gray-900">Emergency Contacts</Text>
+        <Text className="text-xl font-bold text-gray-900">Trusted Helpers</Text>
         <Pressable 
           onPress={() => setShowAddForm(true)}
           className="p-1"
@@ -95,12 +95,12 @@ export default function ContactsScreen({ navigation }: ContactsScreenProps) {
         {/* Info Section */}
         <View className="px-6 py-4 bg-blue-50 border-b border-blue-100">
           <Text className="text-blue-800 font-medium mb-1">
-            How Pet Alert Works
+            How Pet Safety Works
           </Text>
           <Text className="text-blue-700 text-sm">
-            When your timer expires, these contacts will receive SMS text messages with emergency 
-            instructions to check on your pets. The app will also trigger an alarm on your phone 
-            with sound and vibration. Make sure to add trusted friends or family members with valid phone numbers.
+            If you don't return when expected, these trusted friends will receive a caring SMS asking 
+            them to check on your pets. Your phone will also sound an alarm to wake you if needed.
+            Add people you trust with a spare key or who live nearby.
           </Text>
         </View>
 
@@ -108,7 +108,7 @@ export default function ContactsScreen({ navigation }: ContactsScreenProps) {
         {showAddForm && (
           <View className="px-6 py-4 bg-gray-50 border-b border-gray-200">
             <Text className="text-lg font-semibold text-gray-900 mb-4">
-              {editingContact ? 'Edit Contact' : 'Add Emergency Contact'}
+              {editingContact ? 'Edit Helper' : 'Add Trusted Helper'}
             </Text>
             
             <View className="space-y-4">
@@ -151,7 +151,7 @@ export default function ContactsScreen({ navigation }: ContactsScreenProps) {
                   className="flex-1 bg-blue-500 py-3 px-4 rounded-lg items-center"
                 >
                   <Text className="text-white font-semibold">
-                    {editingContact ? 'Update Contact' : 'Add Contact'}
+                    {editingContact ? 'Update Helper' : 'Add Helper'}
                   </Text>
                 </Pressable>
 
@@ -172,16 +172,16 @@ export default function ContactsScreen({ navigation }: ContactsScreenProps) {
             <View className="items-center py-12">
               <Ionicons name="people-outline" size={64} color="#9CA3AF" />
               <Text className="text-gray-500 text-lg font-medium mt-4">
-                No Emergency Contacts
+                No Trusted Helpers Yet
               </Text>
               <Text className="text-gray-400 text-center mt-2 mb-6">
-                Add trusted contacts who can check on your pets when you cannot.
+                Add friends or family who can help check on your pets if needed.
               </Text>
               <Pressable
                 onPress={() => setShowAddForm(true)}
                 className="bg-blue-500 py-3 px-6 rounded-lg"
               >
-                <Text className="text-white font-semibold">Add First Contact</Text>
+                <Text className="text-white font-semibold">Add First Helper</Text>
               </Pressable>
             </View>
           ) : (
