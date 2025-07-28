@@ -225,9 +225,8 @@ export default function TimerScreen({ navigation }: TimerScreenProps) {
   return (
     <SafeAreaView className="flex-1 bg-white" style={{ paddingTop: insets.top }}>
       <View className="flex-1 px-6">
-        {/* Header */}
-        <View className="flex-row items-center justify-between py-4">
-          <Text className="text-2xl font-bold text-gray-900">Pet Safety</Text>
+        {/* Header with Contacts Button */}
+        <View className="flex-row justify-end py-4">
           <Pressable
             onPress={() => navigation.navigate('Contacts')}
             className="p-2"
@@ -236,9 +235,10 @@ export default function TimerScreen({ navigation }: TimerScreenProps) {
           </Pressable>
         </View>
 
-        {/* Pet Profile Display */}
+        {/* Pet Profile Display with App Icon */}
         <PetProfileDisplay 
           onEdit={() => setShowPetProfile(true)}
+          showAppIcon={true}
         />
 
         {/* Status Display */}

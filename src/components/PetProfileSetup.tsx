@@ -127,17 +127,17 @@ export default function PetProfileSetup({ visible, onClose }: PetProfileSetupPro
                 <View>
                   <Image
                     source={{ uri: tempPhoto }}
-                    className="w-24 h-24 rounded-full"
+                    className="w-32 h-32 rounded-full border-4 border-white shadow-lg"
                     resizeMode="cover"
                   />
-                  <View className="absolute -bottom-2 -right-2 bg-blue-500 w-8 h-8 rounded-full items-center justify-center">
-                    <Ionicons name="camera" size={16} color="white" />
+                  <View className="absolute -bottom-2 -right-2 bg-blue-500 w-10 h-10 rounded-full items-center justify-center shadow-md">
+                    <Ionicons name="camera" size={20} color="white" />
                   </View>
                 </View>
               ) : (
-                <View className="w-24 h-24 rounded-full bg-gray-100 items-center justify-center border-2 border-dashed border-gray-300">
-                  <Ionicons name="camera" size={32} color="#9CA3AF" />
-                  <Text className="text-gray-500 text-xs mt-1">Add Photo</Text>
+                <View className="w-32 h-32 rounded-full bg-gray-100 items-center justify-center border-2 border-dashed border-gray-300">
+                  <Ionicons name="camera" size={40} color="#9CA3AF" />
+                  <Text className="text-gray-500 text-xs mt-2">Add Photo</Text>
                 </View>
               )}
             </Pressable>
