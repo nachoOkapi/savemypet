@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Pressable, Alert } from 'react-native';
+import { View, Text, Pressable, Alert, ScrollView } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { usePetAlertStore } from '../state/petAlertStore';
@@ -224,22 +224,22 @@ export default function TimerScreen({ navigation }: TimerScreenProps) {
 
   return (
     <SafeAreaView className="flex-1 bg-white" style={{ paddingTop: insets.top }}>
-      <View className="flex-1 px-6">
-        {/* Header with Contacts Button */}
-        <View className="flex-row justify-end py-4">
-          <Pressable
-            onPress={() => navigation.navigate('Contacts')}
-            className="p-2"
-          >
-            <Ionicons name="people" size={24} color="#374151" />
-          </Pressable>
-        </View>
+      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+        <View className="px-6">
+          {/* Header with Contacts Button */}
+          <View className="flex-row justify-end py-4">
+            <Pressable
+              onPress={() => navigation.navigate('Contacts')}
+              className="p-2"
+            >
+              <Ionicons name="people" size={24} color="#374151" />
+            </Pressable>
+          </View>
 
-        {/* Pet Profile Display with App Icon */}
-        <PetProfileDisplay 
-          onEdit={() => setShowPetProfile(true)}
-          showAppIcon={true}
-        />
+          {/* Pet Profile Display */}
+          <PetProfileDisplay 
+            onEdit={() => setShowPetProfile(true)}
+          />
 
         {/* Status Display */}
         {isTimerActive ? (
@@ -427,20 +427,24 @@ export default function TimerScreen({ navigation }: TimerScreenProps) {
             )}
           </View>
         )}
-        {/* Custom Timer Modal */}
-        <CustomTimerInput
-          visible={showCustomTimer}
-          onClose={() => setShowCustomTimer(false)}
-          onConfirm={(minutes) => setSelectedDuration(minutes)}
-          initialMinutes={selectedDuration}
-        />
+          {/* Bottom padding for better scrolling */}
+          <View className="h-20" />
+        </View>
+      </ScrollView>
 
-        {/* Pet Profile Modal */}
-        <PetProfileSetup
-          visible={showPetProfile}
-          onClose={() => setShowPetProfile(false)}
-        />
-      </View>
+      {/* Pet Profile Modal */}
+      <PetProfileSetup
+        visible={showPetProfile}
+        onClose={() => setShowPetProfile(false)}
+      />
+
+      {/* Custom Timer Modal */}
+      <CustomTimerInput
+        visible={showCustomTimer}
+        onClose={() => setShowCustomTimer(false)}
+        onConfirm={(minutes) => setSelectedDuration(minutes)}
+        initialMinutes={selectedDuration}
+      />
     </SafeAreaView>
   );
 }

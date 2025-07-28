@@ -7,10 +7,9 @@ import { cn } from '../utils/cn';
 interface PetProfileDisplayProps {
   onEdit: () => void;
   compact?: boolean;
-  showAppIcon?: boolean;
 }
 
-export default function PetProfileDisplay({ onEdit, compact = false, showAppIcon = true }: PetProfileDisplayProps) {
+export default function PetProfileDisplay({ onEdit, compact = false }: PetProfileDisplayProps) {
   const { petProfile } = usePetAlertStore();
 
   if (compact) {
@@ -37,39 +36,26 @@ export default function PetProfileDisplay({ onEdit, compact = false, showAppIcon
   }
 
   return (
-    <View className="items-center mb-6">
-      {/* App Icon */}
-      {showAppIcon && (
-        <View className="mb-8">
-          <Image
-            source={{ uri: 'https://images.composerapi.com/6B13487E-0E47-46D5-9725-02DB5883E345.jpg' }}
-            className="w-20 h-20 rounded-2xl shadow-lg"
-            resizeMode="contain"
-          />
-        </View>
-      )}
-
-      {/* Pet Profile Section */}
-      <Pressable
-        onPress={onEdit}
-        className="items-center bg-blue-50 rounded-3xl p-8 border border-blue-100 w-full"
-      >
+    <Pressable
+      onPress={onEdit}
+      className="items-center bg-blue-50 rounded-3xl p-6 mb-4 border border-blue-100 w-full"
+    >
         {/* Pet Photo - Much Larger */}
-        <View className="relative mb-6">
+        <View className="relative mb-4">
           {petProfile.photo ? (
             <Image
               source={{ uri: petProfile.photo }}
-              className="w-40 h-40 rounded-full border-6 border-white shadow-xl"
+              className="w-32 h-32 rounded-full border-4 border-white shadow-lg"
               resizeMode="cover"
             />
           ) : (
-            <View className="w-40 h-40 rounded-full bg-white border-6 border-gray-200 items-center justify-center shadow-xl">
-              <Ionicons name="paw" size={60} color="#9CA3AF" />
+            <View className="w-32 h-32 rounded-full bg-white border-4 border-gray-200 items-center justify-center shadow-lg">
+              <Ionicons name="paw" size={48} color="#9CA3AF" />
             </View>
           )}
           
-          <View className="absolute -bottom-2 -right-2 bg-blue-500 w-12 h-12 rounded-full items-center justify-center shadow-lg">
-            <Ionicons name="pencil" size={20} color="white" />
+          <View className="absolute -bottom-1 -right-1 bg-blue-500 w-10 h-10 rounded-full items-center justify-center shadow-md">
+            <Ionicons name="pencil" size={18} color="white" />
           </View>
         </View>
 
@@ -82,6 +68,5 @@ export default function PetProfileDisplay({ onEdit, compact = false, showAppIcon
           Tap to edit profile
         </Text>
       </Pressable>
-    </View>
   );
 }
