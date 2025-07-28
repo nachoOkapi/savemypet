@@ -23,6 +23,7 @@ export default function TimerScreen({ navigation }: TimerScreenProps) {
   const insets = useSafeAreaInsets();
   const {
     petProfile,
+    careInstructions,
     timerDuration,
     timerStartTime,
     timerEndTime,
@@ -62,7 +63,7 @@ export default function TimerScreen({ navigation }: TimerScreenProps) {
       await triggerAlarm();
       
       // Send SMS alerts to emergency contacts
-      const smsResult = await sendEmergencyAlerts(emergencyContacts);
+      const smsResult = await sendEmergencyAlerts(emergencyContacts, undefined, petProfile.name, careInstructions);
       
       // Store SMS status
       setSmsStatus({
@@ -226,8 +227,14 @@ export default function TimerScreen({ navigation }: TimerScreenProps) {
     <SafeAreaView className="flex-1 bg-white" style={{ paddingTop: insets.top }}>
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <View className="px-6">
-          {/* Header with Contacts Button */}
-          <View className="flex-row justify-end py-4">
+          {/* Header with Navigation Buttons */}
+          <View className="flex-row justify-end space-x-4 py-4">
+            <Pressable
+              onPress={() => navigation.navigate('CareInstructions')}
+              className="p-2"
+            >
+              <Ionicons name="clipboard" size={24} color="#374151" />
+            </Pressable>
             <Pressable
               onPress={() => navigation.navigate('Contacts')}
               className="p-2"
@@ -372,27 +379,51 @@ export default function TimerScreen({ navigation }: TimerScreenProps) {
               </Pressable>
             </View>
 
-            {/* Emergency Contacts Status */}
-            <View className="bg-gray-50 rounded-lg p-4 mb-8">
-              <Text className="text-gray-800 font-medium mb-2">
-                Trusted Helpers ({emergencyContacts.length})
-              </Text>
-              {emergencyContacts.length > 0 ? (
-                emergencyContacts.slice(0, 2).map((contact) => (
-                  <Text key={contact.id} className="text-gray-600 text-sm">
-                    • {contact.name} will get an SMS
+            {/* Emergency Setup Status */}
+            <View className="space-y-4 mb-8">
+              {/* Trusted Helpers */}
+              <View className="bg-gray-50 rounded-lg p-4">
+                <Text className="text-gray-800 font-medium mb-2">
+                  Trusted Helpers ({emergencyContacts.length})
+                </Text>
+                {emergencyContacts.length > 0 ? (
+                  emergencyContacts.slice(0, 2).map((contact) => (
+                    <Text key={contact.id} className="text-gray-600 text-sm">
+                      • {contact.name} will get an SMS
+                    </Text>
+                  ))
+                ) : (
+                  <Text className="text-red-600 text-sm">
+                    No trusted helpers added yet
                   </Text>
-                ))
-              ) : (
-                <Text className="text-red-600 text-sm">
-                  No trusted helpers added yet
-                </Text>
-              )}
-              {emergencyContacts.length > 2 && (
-                <Text className="text-gray-500 text-sm">
-                  +{emergencyContacts.length - 2} more helpers
-                </Text>
-              )}
+                )}
+                {emergencyContacts.length > 2 && (
+                  <Text className="text-gray-500 text-sm">
+                    +{emergencyContacts.length - 2} more helpers
+                  </Text>
+                )}
+              </View>
+
+              {/* Care Instructions Status */}
+              <Pressable
+                onPress={() => navigation.navigate('CareInstructions')}
+                className="bg-green-50 border border-green-200 rounded-lg p-4"
+              >
+                <View className="flex-row items-center justify-between">
+                  <View className="flex-1">
+                    <Text className="text-green-800 font-medium mb-1">
+                      {petProfile.name}'s Care Instructions
+                    </Text>
+                    <Text className="text-green-600 text-sm">
+                      {careInstructions.foodType || careInstructions.vetName || careInstructions.generalInstructions
+                        ? `Feeding • ${careInstructions.medications.length} medications • Vet info ${careInstructions.vetName ? '✓' : '✗'}`
+                        : 'Add feeding, medication, and vet details'
+                      }
+                    </Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={20} color="#059669" />
+                </View>
+              </Pressable>
             </View>
 
             {/* Selected Duration Display */}

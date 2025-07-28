@@ -14,9 +14,38 @@ export interface PetProfile {
   photo?: string; // base64 or file URI
 }
 
+export interface CareInstructions {
+  // Feeding
+  foodType: string;
+  foodAmount: string;
+  feedingTimes: string[];
+  feedingNotes: string;
+  
+  // Medication
+  medications: {
+    id: string;
+    name: string;
+    dosage: string;
+    timing: string;
+    instructions: string;
+  }[];
+  
+  // Veterinary
+  vetName: string;
+  vetPhone: string;
+  vetAddress: string;
+  
+  // General care
+  generalInstructions: string;
+  emergencyNotes: string;
+}
+
 export interface PetAlertState {
   // Pet profile
   petProfile: PetProfile;
+  
+  // Care instructions
+  careInstructions: CareInstructions;
   
   // Timer state
   timerDuration: number; // in minutes
@@ -39,6 +68,10 @@ export interface PetAlertState {
   
   // Actions
   setPetProfile: (profile: Partial<PetProfile>) => void;
+  setCareInstructions: (instructions: Partial<CareInstructions>) => void;
+  addMedication: (medication: Omit<CareInstructions['medications'][0], 'id'>) => void;
+  removeMedication: (id: string) => void;
+  updateMedication: (id: string, updates: Partial<CareInstructions['medications'][0]>) => void;
   setTimerDuration: (duration: number) => void;
   startTimer: () => void;
   checkIn: () => void;
@@ -58,6 +91,18 @@ export const usePetAlertStore = create<PetAlertState>()(
         name: 'My Pet',
         photo: undefined,
       },
+      careInstructions: {
+        foodType: '',
+        foodAmount: '',
+        feedingTimes: [],
+        feedingNotes: '',
+        medications: [],
+        vetName: '',
+        vetPhone: '',
+        vetAddress: '',
+        generalInstructions: '',
+        emergencyNotes: '',
+      },
       timerDuration: 60, // default 1 hour
       timerStartTime: null,
       timerEndTime: null,
@@ -71,6 +116,45 @@ export const usePetAlertStore = create<PetAlertState>()(
       setPetProfile: (profile: Partial<PetProfile>) => {
         set((state) => ({
           petProfile: { ...state.petProfile, ...profile }
+        }));
+      },
+      
+      setCareInstructions: (instructions: Partial<CareInstructions>) => {
+        set((state) => ({
+          careInstructions: { ...state.careInstructions, ...instructions }
+        }));
+      },
+      
+      addMedication: (medication) => {
+        const newMedication = {
+          ...medication,
+          id: Date.now().toString(),
+        };
+        set((state) => ({
+          careInstructions: {
+            ...state.careInstructions,
+            medications: [...state.careInstructions.medications, newMedication],
+          }
+        }));
+      },
+      
+      removeMedication: (id: string) => {
+        set((state) => ({
+          careInstructions: {
+            ...state.careInstructions,
+            medications: state.careInstructions.medications.filter(med => med.id !== id),
+          }
+        }));
+      },
+      
+      updateMedication: (id: string, updates) => {
+        set((state) => ({
+          careInstructions: {
+            ...state.careInstructions,
+            medications: state.careInstructions.medications.map(med =>
+              med.id === id ? { ...med, ...updates } : med
+            ),
+          }
         }));
       },
       
@@ -148,6 +232,7 @@ export const usePetAlertStore = create<PetAlertState>()(
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({
         petProfile: state.petProfile,
+        careInstructions: state.careInstructions,
         timerDuration: state.timerDuration,
         emergencyContacts: state.emergencyContacts,
       }),

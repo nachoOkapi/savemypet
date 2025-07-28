@@ -120,12 +120,12 @@ export async function triggerAlarm(): Promise<void> {
 }
 
 // Function to send SMS to emergency contacts using automatic SMS gateway
-export async function sendEmergencyAlerts(contacts: EmergencyContact[], userMessage?: string): Promise<{ success: boolean; message: string; sentTo: string[]; failedTo: string[] }> {
+export async function sendEmergencyAlerts(contacts: EmergencyContact[], userMessage?: string, petName?: string, careInstructions?: any): Promise<{ success: boolean; message: string; sentTo: string[]; failedTo: string[] }> {
   // Import the SMS gateway function
   const { sendAutomaticSMS } = await import('./smsGateway');
   
   try {
-    const defaultMessage = userMessage || formatAlertMessage('{contactName}');
+    const defaultMessage = userMessage || formatAlertMessage('{contactName}', petName, careInstructions);
     
     // Send SMS automatically using gateway
     const result = await sendAutomaticSMS(contacts, defaultMessage);
@@ -183,7 +183,45 @@ export async function sendEmergencyAlertsNative(contacts: EmergencyContact[], us
   }
 }
 
-export function formatAlertMessage(contactName: string): string {
+export function formatAlertMessage(contactName: string, petName?: string, careInstructions?: any): string {
   const timestamp = new Date().toLocaleString();
-  return `🚨 PET ALERT 🚨\n\nHi ${contactName}, this is an automated emergency alert. I haven't checked in as scheduled and may not be able to care for my pets.\n\nPlease:\n1. Check on my pets immediately\n2. Contact me directly\n3. Use your emergency key if needed\n\nTime: ${timestamp}\n\nThis is an automated message from Pet Alert app.`;
+  let message = `🚨 PET ALERT 🚨\n\nHi ${contactName}, this is an automated emergency alert. I haven't checked in as scheduled and may not be able to care for ${petName || 'my pet'}.\n\nPlease:\n1. Check on ${petName || 'my pet'} immediately\n2. Contact me directly\n3. Use your emergency key if needed\n\n`;
+
+  // Add care instructions if available
+  if (careInstructions) {
+    if (careInstructions.foodType || careInstructions.feedingTimes?.length) {
+      message += `FEEDING:\n`;
+      if (careInstructions.foodType) message += `• Food: ${careInstructions.foodType}\n`;
+      if (careInstructions.foodAmount) message += `• Amount: ${careInstructions.foodAmount}\n`;
+      if (careInstructions.feedingTimes?.length) message += `• Times: ${careInstructions.feedingTimes.join(', ')}\n`;
+      if (careInstructions.feedingNotes) message += `• Notes: ${careInstructions.feedingNotes}\n`;
+      message += `\n`;
+    }
+
+    if (careInstructions.medications?.length) {
+      message += `MEDICATIONS:\n`;
+      careInstructions.medications.forEach(med => {
+        message += `• ${med.name}`;
+        if (med.dosage) message += ` - ${med.dosage}`;
+        if (med.timing) message += ` (${med.timing})`;
+        message += `\n`;
+      });
+      message += `\n`;
+    }
+
+    if (careInstructions.vetName || careInstructions.vetPhone) {
+      message += `VET INFO:\n`;
+      if (careInstructions.vetName) message += `• ${careInstructions.vetName}\n`;
+      if (careInstructions.vetPhone) message += `• ${careInstructions.vetPhone}\n`;
+      message += `\n`;
+    }
+
+    if (careInstructions.emergencyNotes) {
+      message += `EMERGENCY NOTES:\n${careInstructions.emergencyNotes}\n\n`;
+    }
+  }
+
+  message += `Time: ${timestamp}\n\nThis is an automated message from Pet Alert app.`;
+  
+  return message;
 }
