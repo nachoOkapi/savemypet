@@ -5,13 +5,23 @@
     "scheme": "vibecode",
     "version": "1.0.0",
     "orientation": "portrait",
+    "icon": "./assets/icon.jpg",
     "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/icon.jpg",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true
     },
     "android": {
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.jpg",
+        "backgroundColor": "#ffffff"
+      }
     }
   }
 }
