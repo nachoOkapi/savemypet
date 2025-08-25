@@ -14,14 +14,58 @@
     },
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.andrewgd.vibecode",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSLocationWhenInUseUsageDescription": "This app may access location services to enhance your experience with location-based features.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "This app may access location services to enhance your experience with location-based features.",
+        "NSCameraUsageDescription": "This app uses the camera to capture photos and videos for your content.",
+        "NSMicrophoneUsageDescription": "This app uses the microphone to record audio for your content.",
+        "NSPhotoLibraryUsageDescription": "This app needs access to your photo library to save and manage your photos.",
+        "NSContactsUsageDescription": "This app may access your contacts to enhance your user experience.",
+        "NSCalendarsUsageDescription": "This app may access your calendar to help manage your schedule.",
+        "NSRemindersUsageDescription": "This app may access your reminders to help you stay organized.",
+        "NSUserTrackingUsageDescription": "This app may track your activity to provide personalized experiences and improve our services.",
+        "UIBackgroundModes": ["remote-notification"]
+      }
     },
     "android": {
       "edgeToEdgeEnabled": true,
       "adaptiveIcon": {
         "foregroundImage": "./assets/icon.jpg",
         "backgroundColor": "#ffffff"
+      },
+      "permissions": [
+        "WAKE_LOCK",
+        "RECEIVE_BOOT_COMPLETED",
+        "VIBRATE",
+        "WRITE_EXTERNAL_STORAGE",
+        "INTERNET",
+        "ACCESS_NETWORK_STATE",
+        "SYSTEM_ALERT_WINDOW"
+      ]
+    },
+    "extra": {
+      "eas": {
+        "projectId": "e66f040f-a591-46d4-a6b4-bc6b0e4cab26"
       }
-    }
+    },
+    "runtimeVersion": "1.0.3",
+    "plugins": [
+      "expo-build-properties",
+      "expo-font",
+      "expo-secure-store",
+      "expo-sqlite",
+      "expo-video",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.jpg",
+          "color": "#FF0000",
+          "sounds": ["./assets/alarm.wav"]
+        }
+      ]
+    ]
   }
 }

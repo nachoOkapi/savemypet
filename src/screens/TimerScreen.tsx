@@ -5,12 +5,16 @@ import { Ionicons } from '@expo/vector-icons';
 import { usePetAlertStore } from '../state/petAlertStore';
 import { cn } from '../utils/cn';
 import { 
-  scheduleTimerNotification, 
   cancelAllNotifications, 
   sendEmergencyAlerts, 
   formatAlertMessage,
   triggerAlarm 
 } from '../utils/notifications';
+import { 
+  scheduleRobustTimerNotification,
+  clearAllTimerNotifications,
+  checkPendingTimer
+} from '../utils/reliableNotifications';
 import CustomTimerInput from '../components/CustomTimerInput';
 import PetProfileDisplay from '../components/PetProfileDisplay';
 import PetProfileSetup from '../components/PetProfileSetup';
@@ -56,6 +60,57 @@ export default function TimerScreen({ navigation }: TimerScreenProps) {
       }, 500);
     }
   }, [petProfile.name]);
+
+  // Check for pending timers when component mounts
+  useEffect(() => {
+    const checkExpiredTimers = async () => {
+      try {
+        const pendingTimerStatus = await checkPendingTimer();
+        
+        if (pendingTimerStatus?.expired) {
+          const { timerData, minutesOverdue } = pendingTimerStatus;
+          
+          Alert.alert(
+            "🚨 TIMER EXPIRED 🚨",
+            `Your pet safety timer for ${timerData.petName} expired ${minutesOverdue} minutes ago!\n\nDid you receive the notifications? Your emergency contacts may need to be alerted.`,
+            [
+              { text: "Check In Now", onPress: handleCheckIn },
+              { text: "Alert Contacts", onPress: () => handleEmergencyAlert(timerData) },
+            ]
+          );
+        }
+      } catch (error) {
+        console.error('Error checking expired timers:', error);
+      }
+    };
+    
+    checkExpiredTimers();
+  }, []);
+
+  const handleEmergencyAlert = async (timerData: any) => {
+    try {
+      const smsResult = await sendEmergencyAlerts(
+        timerData.emergencyContacts, 
+        undefined, 
+        timerData.petName, 
+        timerData.careInstructions
+      );
+      
+      Alert.alert(
+        smsResult.success ? "Emergency Contacts Notified" : "Notification Failed",
+        smsResult.success 
+          ? `SMS alerts sent to:\n${smsResult.sentTo.map(phone => {
+              const contact = timerData.emergencyContacts.find((c: any) => c.phone === phone);
+              return `• ${contact?.name || 'Unknown'} (${phone})`;
+            }).join('\n')}`
+          : `Failed to send alerts: ${smsResult.message}`,
+        [{ text: "OK", onPress: handleCheckIn }]
+      );
+    } catch (error) {
+      console.error('Error sending emergency alerts:', error);
+      Alert.alert("Error", "Failed to send emergency alerts. Please contact your emergency contacts manually.");
+    }
+  };
 
   const handleTimerExpired = async () => {
     try {
@@ -198,29 +253,56 @@ export default function TimerScreen({ navigation }: TimerScreenProps) {
       return;
     }
     
-    // Schedule notification
-    const notifId = await scheduleTimerNotification(selectedDuration);
-    setNotificationId(notifId);
-    
-    setTimerDuration(selectedDuration);
-    startTimer();
+    try {
+      // Schedule robust notification system
+      const notificationIds = await scheduleRobustTimerNotification(
+        selectedDuration,
+        petProfile.name,
+        emergencyContacts,
+        careInstructions
+      );
+      
+      setNotificationId(notificationIds[0] || null);
+      setTimerDuration(selectedDuration);
+      startTimer();
+      
+      console.log(`Timer started for ${selectedDuration} minutes with ${notificationIds.length} scheduled notifications`);
+    } catch (error) {
+      console.error('Error starting timer:', error);
+      Alert.alert(
+        "Timer Error",
+        "There was an issue setting up your pet safety timer. Please try again.",
+        [{ text: "OK" }]
+      );
+    }
   };
 
   const handleCheckIn = async () => {
-    // Cancel any pending notifications
-    await cancelAllNotifications();
-    setNotificationId(null);
-    
-    checkIn();
-    Alert.alert("Welcome Home! 🏠", `Great to have you back! ${petProfile.name} is safe and sound.`);
+    try {
+      // Clear all timer notifications
+      await clearAllTimerNotifications();
+      setNotificationId(null);
+      
+      checkIn();
+      Alert.alert("Welcome Home! 🏠", `Great to have you back! ${petProfile.name} is safe and sound.`);
+    } catch (error) {
+      console.error('Error checking in:', error);
+      checkIn(); // Still check in even if there's an error
+      Alert.alert("Welcome Home! 🏠", `Great to have you back! ${petProfile.name} is safe and sound.`);
+    }
   };
 
   const handleStopTimer = async () => {
-    // Cancel any pending notifications
-    await cancelAllNotifications();
-    setNotificationId(null);
-    
-    stopTimer();
+    try {
+      // Clear all timer notifications
+      await clearAllTimerNotifications();
+      setNotificationId(null);
+      
+      stopTimer();
+    } catch (error) {
+      console.error('Error stopping timer:', error);
+      stopTimer(); // Still stop the timer even if there's an error
+    }
   };
 
   return (

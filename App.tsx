@@ -1,7 +1,10 @@
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { NavigationContainer } from "@react-navigation/native";
+import { useEffect } from 'react';
+import * as Notifications from 'expo-notifications';
 import AppNavigator from "./src/navigation/AppNavigator";
+import { handleNotificationResponse } from './src/utils/reliableNotifications';
 
 /*
 IMPORTANT NOTICE: DO NOT REMOVE
@@ -25,6 +28,44 @@ const openai_api_key = Constants.expoConfig.extra.apikey;
 */
 
 export default function App() {
+  useEffect(() => {
+    // Initialize notification handling
+    const initializeApp = async () => {
+      try {
+        // Set up notification categories for iOS
+        await Notifications.setNotificationCategoryAsync('pet-alert-alarm', [
+          {
+            identifier: 'check-in',
+            buttonTitle: 'Check In',
+            options: {
+              opensAppToForeground: true,
+            },
+          },
+          {
+            identifier: 'send-sms',
+            buttonTitle: 'Alert Contacts',
+            options: {
+              opensAppToForeground: false,
+            },
+          },
+        ]);
+        
+        // Set up notification response handler
+        const subscription = Notifications.addNotificationResponseReceivedListener(handleNotificationResponse);
+        
+        console.log('App initialization complete');
+        
+        return () => {
+          subscription.remove();
+        };
+      } catch (error) {
+        console.error('Error initializing app:', error);
+      }
+    };
+    
+    initializeApp();
+  }, []);
+
   return (
     <SafeAreaProvider>
       <NavigationContainer>

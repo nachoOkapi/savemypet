@@ -45,27 +45,51 @@ export async function requestNotificationPermissions(): Promise<boolean> {
   }
 }
 
-export async function scheduleTimerNotification(durationMinutes: number): Promise<string | null> {
+export async function scheduleTimerNotification(
+  durationMinutes: number,
+  petName: string = 'Your Pet'
+): Promise<string | null> {
   try {
     const hasPermission = await requestNotificationPermissions();
     if (!hasPermission) {
       return null;
     }
 
+    // Schedule the primary notification
     const notificationId = await Notifications.scheduleNotificationAsync({
       content: {
         title: "🚨 PET ALERT - TIMER EXPIRED! 🚨",
-        body: "URGENT: Check in now! Your emergency contacts will be notified if you don't respond immediately.",
+        body: `URGENT: Check in now! Your emergency contacts will be notified about ${petName} if you don't respond immediately.`,
         sound: createAlarmSound(),
         priority: Notifications.AndroidNotificationPriority.MAX,
         sticky: true,
         vibrate: [0, 500, 200, 500, 200, 500],
         categoryIdentifier: 'pet-alert-alarm',
+        data: {
+          type: 'timer-expired',
+          petName: petName,
+        }
       },
       trigger: {
         seconds: durationMinutes * 60,
       },
     });
+
+    // Schedule additional reminder notifications for critical alerts
+    if (durationMinutes >= 60) { // For timers 1 hour or longer
+      // Schedule a reminder 5 minutes before expiry
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: "⚠️ Pet Safety Timer - 5 Minutes Left",
+          body: `Your pet safety timer for ${petName} expires in 5 minutes. Don't forget to check in!`,
+          sound: 'default',
+          priority: Notifications.AndroidNotificationPriority.HIGH,
+        },
+        trigger: {
+          seconds: (durationMinutes - 5) * 60,
+        },
+      });
+    }
 
     return notificationId;
   } catch (error) {
